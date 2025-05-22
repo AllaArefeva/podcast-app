@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Podcast Generator</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎙️</text></svg>">
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.2.0/mdb.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
+
+
+    <style>
+        :root {
+            --dark-bg-body: #1a1a1a;
+            --dark-bg-card: #2a2a2a;
+            --dark-text-primary: #e0e0e0;
+            --dark-text-secondary: #b0b0b0;
+            --dark-border: #444;
+            --dark-input-bg: #333;
+            --dark-input-border: #555;
+            --dark-input-focus-border: #7d41e4;
+            --dark-primary-btn: #9c27b0;
+            --dark-primary-btn-hover: #7b1fa2;
+            --dark-accent: #03dac6;
+            --dark-error: #cf6679;
+            --dark-error-bg: #3b111c;
+        }
+
+        body {
+            background-color: var(--dark-bg-body);
+            color: var(--dark-text-primary);
+            font-family: 'Roboto', sans-serif;
+            transition: background-color 0.3s ease;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-content {
+             flex: 1;
+             padding-top: 30px;
+             padding-bottom: 30px;
+        }
+
+        .card {
+            background-color: var(--dark-bg-card);
+            border: 1px solid var(--dark-border);
+            border-radius: 8px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+            padding: 30px;
+        }
+
+        h1, h5 {
+            color: var(--dark-text-primary);
+        }
+
+        .form-label {
+            color: var(--dark-text-secondary);
+            font-weight: 500;
+        }
+
+        .form-control, .form-select {
+            background-color: var(--dark-input-bg);
+            color: var(--dark-text-primary);
+            border: 1px solid var(--dark-input-border);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+         .form-control::placeholder {
+             color: var(--dark-text-secondary);
+             opacity: 0.7;
+         }
+        .form-control:focus, .form-select:focus {
+            background-color: var(--dark-input-bg);
+            color: var(--dark-text-primary);
+            border-color: var(--dark-input-focus-border);
+            box-shadow: 0 0 0 0.25rem rgba(125, 65, 228, 0.25);
+             outline: none;
+        }
+         textarea.form-control {
+             min-height: 180px;
+         }
+
+
+        .btn-primary {
+            background-color: var(--dark-primary-btn);
+            border-color: var(--dark-primary-btn);
+            color: white;
+            transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: var(--dark-primary-btn-hover);
+            border-color: var(--dark-primary-btn-hover);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        }
+        .btn-primary:active {
+             transform: translateY(0);
+             box-shadow: none;
+             background-color: var(--dark-primary-btn);
+             border-color: var(--dark-primary-btn);
+        }
+         .btn-primary:disabled {
+             opacity: 0.6;
+             cursor: not-allowed;
+             transform: none;
+             box-shadow: none;
+         }
+
+
+        #loading-spinner {
+            display: none;
+            margin-top: 30px;
+            text-align: center;
+            color: var(--dark-accent);
+            opacity: 0;
+            transition: opacity 0.5s ease-in;
+        }
+         #loading-spinner.show {
+             display: block;
+             opacity: 1;
+         }
+         #loading-spinner p {
+             color: var(--dark-text-secondary);
+             margin-top: 15px;
+         }
+
+        #audio-player-section {
+            display: none;
+            margin-top: 40px;
+            opacity: 0;
+            transition: opacity 0.5s ease-in;
+            background-color: var(--dark-input-bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--dark-border);
+        }
+         #audio-player-section.show {
+             display: block;
+             opacity: 1;
+         }
+        #audio-player-section h5 {
+            margin-bottom: 20px;
+            color: var(--dark-accent);
+        }
+        #audio-player-section audio {
+            width: 100%;
+            filter: invert(90%) sepia(9%) saturate(1597%) hue-rotate(195deg) brightness(100%) contrast(96%);
+        }
+
+        #error-message-section {
+            display: none;
+            margin-top: 30px;
+            color: var(--dark-error);
+            background-color: var(--dark-error-bg);
+            padding: 20px;
+            border-radius: 8px;
+            opacity: 0;
+            transition: opacity 0.5s ease-in;
+            border: 1px solid var(--dark-error);
+        }
+         #error-message-section.show {
+             display: block;
+             opacity: 1;
+         }
+        #error-message-section h5 {
+             color: var(--dark-error);
+             margin-bottom: 10px;
+        }
+
+         .footer {
+             margin-top: 40px;
+             padding: 20px;
+             text-align: center;
+             color: var(--dark-text-secondary);
+             font-size: 0.9em;
+             border-top: 1px solid var(--dark-border);
+         }
+
+         @media (max-width: 576px) {
+             .card {
+                 padding: 20px;
+             }
+             h1 {
+                 font-size: 1.8rem;
+             }
+         }
+
+    </style>
+</head>
+<body class="bg-dark text-light">
+
+    <div class="container main-content">
+        <div class="row justify-content-center">
+            <div class="col-md-10 col-lg-8">
+                <div class="card">
+                    <div class="card-body">
+                        <h1 class="text-center mb-4">AI Podcast Generator 🎙️</h1>
+
+                        <form id="podcast-form">
+                            <div class="mb-4">
+                                <label for="podcastDescription" class="form-label">Podcast Topic/Description</label>
+                                <textarea class="form-control" id="podcastDescription" rows="5" placeholder="Describe the podcast topic and style (e.g., 'A humorous review of classic 80s action movies')" required></textarea>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="numGuests" class="form-label">Number of Speakers</label>
+                                <select class="form-select" id="numGuests" required>
+                                    <option value="1">1 Speaker</option>
+                                    <option value="2">2 Speakers</option>
+                                    <option value="3">3 Speakers</option>
+                                    <option value="4">4 Speakers</option>
+                                </select>
+                                <small id="guestsHelp" class="form-text text-muted">Select the total number of distinct voices in the podcast.</small>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-lg w-100" id="generateBtn">
+                                <span id="button-text">Generate Podcast</span>
+                                <span id="button-spinner" class="fas fa-spinner fa-spin ms-2" style="display: none;"></span>
+                            </button>
+                        </form>
+
+                        <div id="loading-spinner">
+                             <div class="spinner-border" role="status" style="width: 3rem; height: 3rem;">
+                                 <span class="visually-hidden">Loading...</span>
+                             </div>
+                             <p>Generating transcript and audio...</p>
+                         </div>
+
+                        <div id="error-message-section">
+                             <h5>Generation Failed</h5>
+                            <p id="error-text"></p>
+                         </div>
+
+                        <div id="audio-player-section">
+                             <h5>Listen to your podcast:</h5>
+                            <audio controls>
+                                <source src="" type="audio/wav"> Your browser does not support the audio element.
+                            </audio>
+                         </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>AI Podcast Generator. Powered by Gemini</p>
+    </footer>
+
+
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.2.0/mdb.umd.min.js"></script>
+
+    <script>
+        const podcastForm = document.getElementById('podcast-form');
+        const descriptionInput = document.getElementById('podcastDescription');
+        const numGuestsSelect = document.getElementById('numGuests');
+        const generateBtn = document.getElementById('generateBtn');
+        const buttonText = document.getElementById('button-text');
+        const buttonSpinner = document.getElementById('button-spinner');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const errorSection = document.getElementById('error-message-section');
+        const errorText = document.getElementById('error-text');
+        const audioSection = document.getElementById('audio-player-section');
+        const audioPlayer = audioSection.querySelector('audio');
+
+
+        podcastForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const description = descriptionInput.value;
+            const numGuests = parseInt(numGuestsSelect.value, 10);
+
+            if (errorSection.classList.contains('show')) {
+                 errorSection.classList.remove('show');
+                 setTimeout(() => errorSection.style.display = 'none', 500);
+            } else {
+                 errorSection.style.display = 'none';
+            }
+
+            if (audioSection.classList.contains('show')) {
+                 audioSection.classList.remove('show');
+                  setTimeout(() => audioSection.style.display = 'none', 500);
+            } else {
+                audioSection.style.display = 'none';
+            }
+
+            audioPlayer.src = '';
+
+            loadingSpinner.style.display = 'block';
+            setTimeout(() => loadingSpinner.classList.add('show'), 10);
+
+            generateBtn.disabled = true;
+            buttonText.style.display = 'none';
+            buttonSpinner.style.display = 'inline-block';
+
+
+            try {
+                const response = await fetch('/generate_podcast', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ description: description, guests: numGuests })
+                });
+
+                const result = await response.json();
+
+                 loadingSpinner.classList.remove('show');
+                 setTimeout(() => loadingSpinner.style.display = 'none', 500);
+
+
+                if (response.ok) {
+                    audioPlayer.src = result.audio_url;
+                    audioSection.style.display = 'block';
+                    setTimeout(() => audioSection.classList.add('show'), 10);
+
+                } else {
+                    errorText.textContent = result.error || 'An unknown error occurred.';
+                    errorSection.style.display = 'block';
+                    setTimeout(() => errorSection.classList.add('show'), 10);
+                }
+
+            } catch (error) {
+                console.error('Fetch error:', error);
+
+                loadingSpinner.classList.remove('show');
+                 setTimeout(() => loadingSpinner.style.display = 'none', 500);
+
+                errorText.textContent = 'Could not connect to the server or a network error occurred.';
+                errorSection.style.display = 'block';
+                 setTimeout(() => errorSection.classList.add('show'), 10);
+
+            } finally {
+                generateBtn.disabled = false;
+                buttonSpinner.style.display = 'none';
+                buttonText.style.display = 'inline';
+            }
+        });
+    </script>
+
+</body>
+</html>

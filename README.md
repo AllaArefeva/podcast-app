@@ -1,2 +1,1 @@
-# podcast-app
-Podcast App
+# Podcast App
