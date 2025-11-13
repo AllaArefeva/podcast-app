@@ -2,28 +2,36 @@ import os
 import json
 import uuid
 import tempfile
+import traceback
+import dotenv
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from google.cloud import texttospeech
+from google.api_core.client_options import ClientOptions
 from google import genai
-from google.genai.types import HttpOptions, ModelContent, Part, UserContent
+from google.genai.types import HttpOptions, ModelContent, Part, UserContent, Content
 from moviepy.editor import AudioFileClip, concatenate_audioclips
 
+dotenv.load_dotenv()
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'static/audio'
+app.config['UPLOAD_FOLDER'] = 'app/src/static/audio'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 GCP_PROJECT_ID = os.environ['GOOGLE_CLOUD_PROJECT']
 GCP_LOCATION   = os.environ.get('GOOGLE_CLOUD_LOCATION', 'us-central1')
-
+API_KEY = os.environ.get('GOOGLE_API_KEY')
+MODEL = "gemini-2.0-flash-001"
+IS_CLOUD_RUN = False
 if not GCP_PROJECT_ID or GCP_PROJECT_ID == 'your-gcp-project-id':
     print("WARNING: GOOGLE_CLOUD_PROJECT environment variable not set or is default. Please set it.")
     print("Alternatively, replace 'your-gcp-project-id' in app.py with your actual GCP Project ID.")
 
 try:
-    gemini_model = genai.Client(http_options=HttpOptions(api_version="v1"))
-    tts_client = texttospeech.TextToSpeechClient()
+    gemini_model = genai.Client(http_options=HttpOptions(api_version="v1"), api_key=API_KEY)
+    client_options = ClientOptions(api_key=API_KEY)
+    tts_client = texttospeech.TextToSpeechClient(client_options=client_options)
 except Exception as e:
     print(f"Error initializing Google Cloud services: {e}")
+    traceback.print_exc()
     print("Please ensure GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION environment variables are set correctly and APIs are enabled.")
     gemini_model = None
     tts_client = None
@@ -43,10 +51,10 @@ def generate_transcript_with_gemini(description, num_guests):
     """
     if gemini_model is None:
         raise ConnectionError("Google Cloud Vertex AI (Gemini) client not initialized.")
-
+    
     chat_session = gemini_model.chats.create(
-        model="gemini-2.0-flash-001",
-    )
+            model=MODEL,
+        )
 
     prompt = f"""
     Generate a short, fictional podcast transcript based on the following description: "{description}".
@@ -237,6 +245,7 @@ def generate_podcast():
          return jsonify({"error": f"Google Cloud service failed: {e}. Check API keys/permissions and server logs."}), 500
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
+        traceback.print_exc()
         return jsonify({"error": f"An internal server error occurred: {e}"}), 500
     finally:
         for f_path in temp_files:
